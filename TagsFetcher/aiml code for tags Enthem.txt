@@ -1,0 +1,116 @@
+#Generate Dataset and export as csv file: 
+import csv
+
+training_data = []
+
+# Your code to generate the training data
+# ...
+
+import openai
+
+openai.api_key = ''  # Replace with your OpenAI API key
+
+tags = ["Startup Funding", "Pitching", "Business Strategy", "Growth Hacking", "Entrepreneurship",
+        "Business Development", "Leadership", "Sales", "Product Management", "Branding", "Marketing",
+        "E-commerce", "Venture Capital", "Artificial Intelligence", "Blockchain", "Augmented Reality",
+        "Virtual Reality", "Cryptocurrency", "Cybersecurity", "Quantum Computing", "Robotics", "Automation",
+        "Software Development", "UX/UI Design", "Web Development", "Mobile Development", "Data Science",
+        "Cloud Computing", "Podcasting", "Stand-up Comedy", "Music", "Film and TV", "Visual Arts",
+        "Photography", "Writing", "Publishing", "Gaming", "Esports", "Cosplay", "Theater", "Dance",
+        "Fashion", "Beauty", "Travel", "Food and Beverage", "Wine", "Beer", "Spirits", "Health and Wellness",
+        "Yoga", "Meditation", "Fitness", "Sports", "Recreation", "Outdoors", "Parenting", "Education",
+        "Science", "Climate Change", "Space Exploration", "Environment", "Personal Development",
+        "Productivity", "Mindfulness", "Self-Care", "Psychology", "Philosophy", "Spirituality",
+        "Relationships", "Communication", "Creativity", "Motivation", "Time Management", "Politics",
+        "Social Justice", "Human Rights", "Feminism", "LGBTQ+ Rights", "Racism", "Disability Rights",
+        "Mental Health", "Substance Abuse", "Law", "History", "Urban Planning", "Architecture",
+        "Immigration", "Economics", "Journalism"]
+
+
+def generate_titles(prompt):
+    response = openai.Completion.create(
+        engine='text-davinci-003',
+        prompt=prompt,
+        max_tokens=50,
+        n=5  # Generate 5 titles per tag
+    )
+    if response['choices']:
+        return [choice['text'].strip() for choice in response['choices']]
+    else:
+        return []
+
+for tag in tags:
+    prompt = f"Generate titles related to {tag}"
+    titles = generate_titles(prompt)
+    for title in titles:
+        training_data.append((title, tag))
+
+
+# Export the training data to a CSV file
+with open('training_data.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Title", "Tag"])  # Write header row
+    writer.writerows(training_data)
+
+print("Training data exported to training_data.csv.")
+
+
+
+
+#Train model and export:
+
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+import pickle
+
+# Read the training data from the CSV file
+training_data = pd.read_csv('training_data.csv', encoding='latin1')
+
+# Separate the titles and tags
+titles = training_data['Title']
+tags = training_data['Tag']
+
+# Create a pipeline for text classification
+pipeline = Pipeline([
+    ('tfidf', TfidfVectorizer()),  # Convert titles into TF-IDF vectors
+    ('clf', SVC()),  # Support Vector Classifier
+])
+
+# Train the model
+pipeline.fit(titles, tags)
+
+# Save the trained model to a file
+with open('latest_trained_model.pkl', 'wb') as file:
+    pickle.dump(pipeline, file)
+
+print("Model trained and saved as trained_model.pkl.")
+
+
+
+#Test model:
+
+import pickle
+
+# Load the trained model from the file
+with open('latest_trained_model.pkl', 'rb') as file:
+    model = pickle.load(file)
+
+# Define some random input titles for testing
+input_titles = [
+    "How to start a successful business",
+    "The future of artificial intelligence",
+    "Best marketing strategies for startups",
+    "Introduction to quantum computing",
+    "Tips for improving productivity",
+]
+
+# Use the trained model to predict tags for the input titles
+predicted_tags = model.predict(input_titles)
+
+# Print the input titles along with their predicted tags
+for title, tag in zip(input_titles, predicted_tags):
+    print(f"Title: {title}")
+    print(f"Predicted Tag: {tag}")
+    print()
